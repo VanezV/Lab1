@@ -1,0 +1,42 @@
+create view v1 as select * from orders;
+commit;
+
+create view v2 as 
+select * from cars where body_code = 5 and engine_code=3;
+commit;
+
+create view v3 as
+select * from cars where models_code between 100 and 200 and color_code = 1;
+commit;
+
+create view v4(summa) as select Sum(guarantee_days) from works;
+commit;
+
+create view v5 as select * from orders order by client_code, car_code;
+commit;
+
+create view v6 as select options.option from options,ord_opt 
+where options.id = ord_opt.option_code AND options.price_fact = ord_opt.price_ord;
+commit;
+
+create view v7(order_code, cnt) as select order_code, count(order_code) from ord_opt
+ group by order_code having count(order_code)>1; 
+commit;
+
+create view v8 as select car_code from service where work_type in
+( select id from works where guarantee_days > 50);
+commit;
+
+
+/Доделать
+
+SQL> select AVG(price_ord) from ord_opt group by order_code;
+
+create view my2(models) as 
+select models from models where id in (
+select models_code from cars where car_code in( 
+select car_code from orders where order_code in (
+select order_code from ord_opt group by order_code)));
+commit;
+
+
