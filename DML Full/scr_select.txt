@@ -1,0 +1,48 @@
+create view v1 as select * from orders;
+commit;
+
+create view v2 as 
+select * from cars where body_code = 5 and engine_code=3;
+commit;
+
+create view v3 as
+select * from cars where models_code between 100 and 200 and color_code = 1;
+commit;
+
+create view v4(summa) as select Sum(guarantee_days) from works;
+commit;
+
+create view v5 as select * from orders order by client_code, car_code;
+commit;
+
+create view v6 as select options.option from options,ord_opt 
+where options.id = ord_opt.option_code AND options.price_fact = ord_opt.price_ord;
+commit;
+
+create view v7(order_code, cnt) as select order_code, count(order_code) from ord_opt
+ group by order_code having count(order_code)>1; 
+commit;
+
+create view v8 as select car_code from service where work_type in
+( select id from works where guarantee_days > 50);
+commit;
+
+create view max_serv(id, sum_serv) as
+select first 5 m.id, sum(srv.price_serv) as prs
+ 	from service srv, cars c, models m
+	    where srv.car_code=c.car_code and
+	          c.models_code=m.id and
+	          srv.date_start between '2015-09-22' and '2015-10-30'
+	     group by m.id
+    order by prs desc;
+commit;
+
+create view avg_opt(model_id, avg_price) as
+select id, avg(qq) from (select m.id, sum(oo.price_ord) as qq, oo.order_code
+    from ord_opt oo, cars c, models m, orders o
+        where oo.order_code=o.order_code and
+              o.car_code=c.car_code and
+              c.models_code=m .id
+              group by oo.order_code, m.id) 
+    group by id;
+commit;
