@@ -1,0 +1,71 @@
+set term ^;
+create or alter procedure Stat(yyear int)
+returns (mod int ,sal1 int, sal2 int, sal3 int, sal4 int)
+as
+begin
+	for 
+		with stat as
+		(
+		select c.models_code as m_code, count(Cnt) as first_q, 0 as second_q, 0 as third_q, 0 as 	
+		fourth_q from cars c, (select car_code as s, count(order_code) as Cnt from orders
+		where extract(YEAR from ORDERS.DATE_OF_ORDER) = :yyear and (extract(MONTH from 		
+		ORDERS.DATE_OF_ORDER) + 2)/3 = 1
+		group by car_code
+
+		union all
+
+		select c.models_code as m_code, 0 as first_q, count(Cnt) as second_q, 0 as third_q, 0 as 
+		fourth_q from cars c, (select car_code as s, count(order_code) as Cnt from orders
+		where extract(YEAR from ORDERS.DATE_OF_ORDER) = :yyear and (extract(MONTH from 		
+		ORDERS.DATE_OF_ORDER) + 2)/3 = 2
+		group by car_code
+
+		union all
+
+		select c.models_code as m_code, 0 as first_q, 0 as second_q, count(Cnt) as third_q, 	
+		0 as fourth_q from cars c, (select car_code as s, count(order_code) as Cnt from orders
+		where extract(YEAR from ORDERS.DATE_OF_ORDER) = :yyear and (extract(MONTH from 		
+		ORDERS.DATE_OF_ORDER) + 2)/3 = 3
+		group by car_code
+
+		union all
+
+		select c.models_code as m_code, 0 as first_q, 0 as second_q, 0 as third_q, count(Cnt)
+		as fourth_q from cars c, (select car_code as s, count(order_code) as Cnt from orders
+		where extract(YEAR from ORDERS.DATE_OF_ORDER) = :yyear and (extract(MONTH from 		
+		ORDERS.DATE_OF_ORDER) + 2)/3 = 4
+		group by car_code
+		)
+		select m_code, first_q,second_q,third_q,fourth_q from stat
+		into :mod, :sal1, :sal2, :sal3, :sal4
+	do	
+	begin
+	suspend;
+	end
+END^
+
+create or alter procedure Stat2(date_start date, date_end date)
+returns (model int, vix int)
+as
+begin
+for
+
+select m.id, ssu, m.price from models m,
+    (select c.models_code as cm, sum(su) as ssu from cars c,
+        (select o.car_code as cc, sum(oo.price_ord) as su
+        from ord_opt as oo, orders o
+        where oo.order_code = o.order_code and o.date_of_order
+        between :date_start and :date_end group by o.car_code)
+        where c.car_code =cc group by c.models_code)
+        where m.id = cm
+into :model, :summa, :price
+
+do begin
+vix = summa*10/price;
+suspend;
+end
+
+END^
+
+
+set term ;^
